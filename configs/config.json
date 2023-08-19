@@ -1,0 +1,123 @@
+{
+    "dataset_reader": {
+       "package": "custom",
+       "module_dot_path": "seal.custom.MNISTDataset",
+       "args":{
+           "path_to_data": "/home/jylab_intern001/seal_refactoring/data/MNIST_pair/validation_data.pkl",
+           "test":false
+        },
+       "object_name":"MNISTDataset"
+    },
+    "data_loader":{
+        "package": "allennlp",
+        "module_dot_path": "torch.utils.data.DataLoader",
+        "object_name":"DataLoader",
+        "args":{
+           "batch_size": 64,
+           "shuffle":true
+        }
+    },
+    "model":{
+        "module_dot_path":"seal.custom.exp_seal.SEAL",
+        "object_name":"SEAL",
+        "args":{
+            "inference_module":{
+                "module_dot_path": "seal.custom.exp_seal.Infernece_module",
+                "object_name": "Infernece_module",
+                "args":{
+                    "loss_fn":{
+                        "module_dot_path": "torch.nn.CrossEntropyLoss",
+                        "object_name": "CrossEntropyLoss"
+                    }
+                }
+            },
+            "score_net": {
+                "module_dot_path": "seal.custom.exp_seal.MyScoreNN",
+                "object_name": "MyScoreNN",
+                "args":{
+                    "task_net": {
+                        "module_dot_path": "seal.custom.exp_seal.MyTaskNN",
+                        "object_name": "MyTaskNN",
+                        "args":{
+                            "feature_net": {
+                                "module_dot_path": "seal.custom.exp_architecture.MLP",
+                                "object_name": "MLP",
+                                "args":{
+                                    "H": 28,
+                                    "W": 28
+                                }
+                            }
+                        }
+                    },
+                    "bilinear":{
+                        "module_dot_path": "torch.nn.Linear",
+                        "object_name": "Linear",
+                        "args":{
+                            "in_features": 19,
+                            "out_features":19,
+                            "bias":true
+                        }
+                    },
+                    "projection":{
+                        "module_dot_path": "torch.nn.Linear",
+                        "object_name": "Linear",
+                        "args":{
+                            "in_features": 19,
+                            "out_features":19
+                        }
+                    }
+                }
+            },
+            "task_net": {
+                "module_dot_path": "seal.custom.exp_seal.MyTaskNN",
+                "object_name": "MyTaskNN",
+                "args":{
+                    "feature_net": {
+                        "module_dot_path": "seal.custom.exp_architecture.MLP",
+                        "object_name": "MLP",
+                        "args":{
+                            "H": 28,
+                            "W": 28
+                        }
+                    }
+                }
+            },
+            "loss_fn":{
+                "module_dot_path": "seal.custom.exp_seal.RankingLoss",
+                "object_name": "RankingLoss",
+                "args":{
+                    "loss_fn":{
+                        "module_dot_path": "torch.nn.CrossEntropyLoss",
+                        "object_name": "CrossEntropyLoss"
+                    }
+                }
+            }
+        }
+    },
+    "trainer":{
+        "optimizers": {
+            "score_net": {
+                "module_dot_path": "transformers.AdamW",
+                "object_name":"AdamW",
+                "args":{
+                    "lr": 0.0001,
+                    "weight_decay": 0.0001
+                }
+            },
+            "task_net": {
+                "module_dot_path": "transformers.AdamW",
+                "object_name":"AdamW",
+                "args":{
+                    "lr": 0.00001,
+                    "weight_decay": 0.0001
+                }
+            }
+        },
+        "inner_mode": "score_net",
+        "num_steps": {
+            "score_net": 1,
+            "task_net": 1
+        },
+        "epoch":10
+    }
+}
