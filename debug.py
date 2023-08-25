@@ -1,11 +1,9 @@
 import json
 import shutil
 import sys
-a='000'
-print(sorted(a))
 from allennlp.commands import main
 
-config_file = "./mlc_bgc_base.json"
+config_file = "bgc_config.json"
 
 # Use overrides to train on CPU.
 overrides = json.dumps({"trainer.cuda_device": -1})

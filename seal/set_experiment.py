@@ -20,7 +20,9 @@ class Experiment(object):
 
         data_loader = self.data_wrapper.make_dataloader()
 
-        seal = self.model_wrapper.make_shared_nn_seal()
+        vocab = self.wrapper.construct_class(self.config_dict['vocabulary'],"vocabulary")
+
+        seal = self.model_wrapper.make_shared_nn_seal(vocab)
 
         optimizers = self.make_optimizers(seal, self.config_dict['trainer'].pop('optimizers'))
 
@@ -30,7 +32,7 @@ class Experiment(object):
         
         optimizers = {
             name:
-            self.wrapper.construct_module(
+            self.wrapper.construct_class(
                 optimizers_config[name], 
                 name, 
                 params=getattr(

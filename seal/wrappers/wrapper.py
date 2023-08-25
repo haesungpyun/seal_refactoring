@@ -4,27 +4,26 @@ import importlib
 from typing import Any
 import inspect
 
-
 class Wrapper(object):
     def __init__(self):
         super().__init__()
         self.base_classes=None
         self.registerd_class=None
 
-    def construct_module(
+    def construct_class(
             self, 
             config : dict,
             class_name: str,
             **kwargs:Any
         ):
 
-        module, constructor, args = self.import_module(config, class_name)
+        module, constructor, args = self.import_class(config, class_name)
         # If you want to instantiate specific sub classes, instantiate some classes in here,
         # then pass them to self.check_module_args function as keyword argument format.
         # Or you can instantiate the object outside of this function, and simply pass them to 
         # this construct_module as kwargs. 
-        checked_params = self.check_module_args(
-            module=module, 
+        checked_params = self.construct_args(
+            class_obj=module, 
             constructor=constructor, 
             args=args, 
             **kwargs
@@ -36,26 +35,27 @@ class Wrapper(object):
             return getattr(module, constructor)(**checked_params)
         
     
-    def check_module_args(
+    def construct_args(
         self,
-        module: object,
+        class_obj: object,
         constructor: Any, 
         args: dict, 
         **kwargs:Any      
     ):
         if constructor is None :
-            constructor = module
+            constructor = class_obj
         else:
             try:
-                constructor = getattr(module, constructor)
+                constructor = getattr(class_obj, constructor)
             except:
-                constructor = getattr(module, constructor.__name__)
+                constructor = getattr(class_obj, constructor.__name__)
+        
+        if hasattr(args, 'as_dict'):
+            args = args.as_dict()
 
         checked_param = defaultdict()
         accecpt_kwargs = False
 
-        # if "object_name" in str(args) or "module_dot_path" in str(args):
-            # import 
         signature = inspect.signature(constructor)
         parameters = dict(signature.parameters)
         
@@ -66,7 +66,7 @@ class Wrapper(object):
             if param.kind == param.VAR_KEYWORD:
                 accecpt_kwargs = True
                 continue    
-            
+
             if kwargs.get(param_name) is not None:
                 checked_param[param_name] = kwargs.pop(param_name)
                 continue
@@ -78,19 +78,40 @@ class Wrapper(object):
                 if param.default != inspect._empty:
                     checked_param[param_name] = param.default
                 continue
-        
-            if type(config_param) in [str, int, bool, float, complex]:
+
+            if "module_dot_path" not in str(config_param):
                 checked_param[param_name] = config_param
             else:
-                checked_param[param_name] = self.construct_module(config_param, param_name)
-        
+                def recursive_construct(config_param, param_name):
+                    if type(config_param) == dict:
+                        tmp = {}
+                        if "module_dot_path" in config_param.keys():  
+                            return self.construct_class(config_param, param_name)
+                        else:
+                            for key, value_params in config_param.items():
+                                tmp[key] = recursive_construct(value_params, param_name+'.'+key)
+                                return tmp
+                    else:
+                        tmp = []
+                        for i, value_params in enumerate(config_param):
+                            tmp.append(recursive_construct(value_params, param_name+'.'+str(i)))
+                            return type(config_param)(tmp)
+                
+                checked_param[param_name] = recursive_construct(config_param, param_name)
+            
+            # if annotation in [str, int, bool, float, complex]:
+            #     checked_param[param_name] = config_param
+   
+            # else:
+            #     checked_param[param_name] = self.construct_class(config_param, param_name)
+
         if accecpt_kwargs:
             checked_param.update(args)
             checked_param.update(kwargs)
 
         return checked_param
             
-    def import_module(
+    def import_class(
             self,
             config : dict,
             class_name: str,
@@ -157,4 +178,3 @@ class Wrapper(object):
                 return object_to_call, config.get('constructor'), module_args
             else:
                 return object_to_call, None, module_args
-

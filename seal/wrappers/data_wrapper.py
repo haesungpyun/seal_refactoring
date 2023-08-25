@@ -14,8 +14,8 @@ class DataWrapper(Wrapper):
         self.config_dict = config_dict
         
     def make_dataloader(self):
-        # dataset = self.construct_module(self.config_dict['dataset_reader'], 'dataset_reader')
-        data_loader = self.construct_module(self.config_dict['data_loader'], 'data_loader')
+        dataset = self.construct_class(self.config_dict['dataset_reader'], 'dataset_reader')
+        data_loader = self.construct_class(self.config_dict['data_loader'], 'data_loader', reader=dataset)
 
         # if allennlp:
         #     vocabulary_ = vocabulary.construct(instances=instance_generator)

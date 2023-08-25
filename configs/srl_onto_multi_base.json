@@ -134,9 +134,9 @@
         "use_pseudo_labeling": false,
         "using_bert_encoder": true
     },
-    "train_data_path":"/home/jylab_intern001/seal_ex/data/conll-2012-da/v12/data/train_multi/data/english/annotations/labeled",
-    "validation_data_path": "/home/jylab_intern001/seal_ex/data/conll-2012-da/v12/data/development/data/english/annotations/",
-    "test_data_path": "/home/jylab_intern001/seal_ex/data/conll-2012-da/v12/data/test/data/english/annotations/",
+    "train_data_path":"./data/conll-2012-da/v12/data/train_multi/data/english/annotations/labeled",
+    "validation_data_path": "./data/conll-2012-da/v12/data/development/data/english/annotations/",
+    "test_data_path": "./data/conll-2012-da/v12/data/test/data/english/annotations/",
     "trainer": {
         "type": "gradient_descent_minimax",
         "callbacks": [
@@ -200,7 +200,7 @@
     },
     "vocabulary": {
         "type": "from_files",
-        "directory": "/home/jylab_intern001/seal_ex/data/conll-2012-da/vocabulary"
+        "directory": "./data/conll-2012-da/vocabulary"
     },
     "evaluate_on_test": true,
     "numpy_seed": 2,

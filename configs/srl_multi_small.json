@@ -3,8 +3,8 @@
     "data_loader": {
         "type": "multitask",
         "data_path": {
-            "labeled": "/home/jylab_intern001/seal_ex/data/conll-2012-da/v12/data/train_small/data/english/annotations/bc",
-            "unlabeled": "/home/jylab_intern001/seal_ex/data/conll-2012-da/v12/data/train_small/data/english/annotations/wb"
+            "labeled": "./data/conll-2012-da/v12/data/train_small/data/english/annotations/bc",
+            "unlabeled": "./data/conll-2012-da/v12/data/train_small/data/english/annotations/bn"
         },
         "num_workers": {
             "labeled": 0,
@@ -172,7 +172,7 @@
         "using_bert_encoder": true
     },
     "train_data_path": "./",
-    "validation_data_path": "/home/jylab_intern001/seal_ex/data/conll-2012-da/v12/data/train_small/data/english/annotations/bc",
+    "validation_data_path": "./data/conll-2012-da/v12/data/train_small/data/english/annotations/bc",
     "trainer": {
         "type": "gradient_descent_minimax",
         "callbacks": [
@@ -235,7 +235,7 @@
     },
     "vocabulary": {
         "type": "from_files",
-        "directory": "/home/jylab_intern001/seal_ex/data/conll-2012-da/vocabulary"
+        "directory": "./data/conll-2012-da/vocabulary"
     },
     "evaluate_on_test": true,
     "numpy_seed": 2,

@@ -154,7 +154,7 @@
                     "text_field_embedder": {
                         "token_embedders": {
                             "x": {
-                                "type": "pretrained_transformer_with_adapter",
+                                "type": "pretrained_transformer",
                                 "model_name": "bert-base-uncased"
                             }
                         }
@@ -193,7 +193,7 @@
                 "text_field_embedder": {
                     "token_embedders": {
                         "x": {
-                            "type": "pretrained_transformer_with_adapter",
+                            "type": "pretrained_transformer",
                             "model_name": "bert-base-uncased"
                         }
                     }

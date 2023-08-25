@@ -1,15 +1,24 @@
-import torch, gc
-gc.collect()
-torch.cuda.empty_cache()
-from datetime import datetime
-import os
-import zipfile
+# import torch, gc
+# gc.collect()
+# torch.cuda.empty_cache()
+# from datetime import datetime
+# import os
+# import zipfile
 
-import os 
+# import os 
 
-import json
-import sys, os
-import pandas as pd
+# import json
+# import sys, os
+# import pandas as pd
+
+from transformers import BertTokenizer
+
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+sent = "i am driving"
+token = tokenizer(sent, return_tensor='pt')
+# index = tokenizer(token)
+
+raise ValueError
 
 import os
 i = 0

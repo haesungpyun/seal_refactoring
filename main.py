@@ -1,3 +1,4 @@
+import sys, os
 import json
 import pkgutil
 import importlib
@@ -5,32 +6,45 @@ import torch
 import importlib
 from seal.set_experiment import Experiment
 from allennlp.common.util import import_module_and_submodules
-
+import pathlib
 
 def main(path_to_config:str = None):
-    # from allennlp.common.util import import_module_and_submodules
-    
-    # import_module_and_submodules('allennlp_models')
-    
-    if False:   # config 안에 allennlp가 있는지 확인 후 import 
-        package = importlib.import_module('allennlp_models')
-        path = getattr(package, "__path__", [])
-        for _, name, ispkg in pkgutil.walk_packages(path):
-            importlib.import_module(package_name+'.'+name)
-    
+
     with open(path_to_config, 'r') as f:
         config = json.load(f)
 
-    package = importlib.import_module('seal')
-    path = getattr(package, "__path__", [])
-    for _, name, ispkg in pkgutil.walk_packages(path):
-        importlib.import_module('seal'+'.'+name)
-
-    # import_module_and_submodules('seal')
+    # package = importlib.import_module('seal')
+    # path = getattr(package, "__path__", [])
+    # for _, name, ispkg in pkgutil.walk_packages(path):
+    #     importlib.import_module('seal'+'.'+name)
+    
     if 'allennlp' in str(config):
         import_module_and_submodules('allennlp')
         import_module_and_submodules('allennlp_models')
 
+    package = importlib.import_module('seal')
+    path = getattr(package, "__path__", [])
+    for path, subdirs, subfiles in os.walk('seal'):
+        if "__pycache__" in path:
+            continue
+        path = pathlib.Path(path)
+        path = '.'.join(path.parts)
+        for subf in subfiles:
+            if subf.startswith('.') or subf.endswith('.pyc'):
+                continue
+            if not subf.endswith('.py'):
+                continue
+            path = pathlib.Path(path)
+            file_path = path.joinpath(subf) 
+            dot_not = '.'.join(path.joinpath(subf.replace('.py','')).parts)
+            try:    
+                importlib.import_module(dot_not)
+            except:
+                continue
+            # spec = importlib.util.spec_from_file_location(dot_not, file_path)
+            # module = importlib.util.module_from_spec(spec)
+            # sys.modules[dot_not] = module
+    
     experiment = Experiment(config)
     # experiment.make_data_loader()
     train_dataloader, model, optimizers = experiment.set_experiment()
@@ -80,4 +94,4 @@ def main(path_to_config:str = None):
     print(f'--------------------- Epoch {epoch} ended ---------------------')
             
 if __name__ == '__main__':
-    main("/home/jylab_intern001/refactoring/config.json")
+    main("./config.json")
