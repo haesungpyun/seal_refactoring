@@ -1,9 +1,9 @@
 import difflib
 from typing_extensions import override
-from .wrapper import Wrapper
+from .constructor import Constructor
 
 
-class ModelWrapper(Wrapper): # type: ignore
+class ModelConstructor(Constructor): # type: ignore
     def __init__(self, config_dict):
         super().__init__()
         self.model_config = config_dict['model']

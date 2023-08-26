@@ -35,7 +35,7 @@ def main(path_to_config:str = None):
             if not subf.endswith('.py'):
                 continue
             path = pathlib.Path(path)
-            file_path = path.joinpath(subf) 
+            # file_path = path.joinpath(subf) 
             dot_not = '.'.join(path.joinpath(subf.replace('.py','')).parts)
             try:    
                 importlib.import_module(dot_not)

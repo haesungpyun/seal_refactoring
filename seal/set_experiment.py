@@ -1,9 +1,9 @@
 import torch
 import importlib
-from seal.wrappers.wrapper import Wrapper
-from seal.wrappers.model_wrapper import ModelWrapper
-from seal.wrappers.data_wrapper import DataWrapper
-from seal.wrappers.wrapper import Wrapper
+from seal.wrappers.constructor import Constructor
+from seal.wrappers.model_constructor import ModelConstructor
+from seal.wrappers.data_constructor import DataConstructor
+from seal.wrappers.constructor import Constructor
 from allennlp.data import Vocabulary
 
 class Experiment(object):
@@ -12,9 +12,9 @@ class Experiment(object):
             config_dict
     ):
         self.config_dict = config_dict
-        self.wrapper = Wrapper()
-        self.data_wrapper = DataWrapper(config_dict=self.config_dict)
-        self.model_wrapper = ModelWrapper(config_dict=self.config_dict)
+        self.wrapper = Constructor()
+        self.data_wrapper = DataConstructor(config_dict=self.config_dict)
+        self.model_wrapper = ModelConstructor(config_dict=self.config_dict)
 
     def set_experiment(self):
 

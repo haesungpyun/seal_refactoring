@@ -1,4 +1,5 @@
 import pickle
+import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset
 from typing import List
@@ -26,7 +27,29 @@ class MNISTDataset(Dataset):
     
     def __getitem__(self, idx):
         return self.num_pairs[idx].float(), self.labels[idx].float()
+
+class MyDataset(Dataset):
     
+    def __init__(
+        self,
+        path_to_data:str,
+        num_labels:int ,
+        **kwargs
+    ):
+        super().__init__()
+        with open(path_to_data, 'rb') as f:
+            self.dataset = pickle.load(f)
+        
+        self.input = self.dataset[0]
+        self.labels = self.dataset[1]
+    
+    def __len__(self,):
+        return len(self.num_pairs)
+    
+    def __getitem__(self, idx):
+        return self.input[idx].float(), self.labels[idx].float()
+
+
 
 
 """

@@ -4,7 +4,7 @@ import importlib
 from typing import Any
 import inspect
 
-class Wrapper(object):
+class Constructor(object):
     def __init__(self):
         super().__init__()
         self.base_classes=None
