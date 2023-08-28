@@ -1,0 +1,355 @@
+{   
+    "dataset_reader": {
+        "module_dot_path": "seal.custom.custom_dataset",
+        "object_name": "MyDataset",
+        "args":{
+            "tokenizer":{
+                "module_dot_path": "transformers",
+                "object_name": "AutoTokenizer",
+                "constructor": "from_pretrained",
+                "args":{
+                    "pretrained_model_name_or_path": "bert-base-uncased"
+                }
+            },
+            "dataset":{
+                "module_dot_path": "datasets",
+                "object_name":"load_dataset",
+                "args":{
+                    "path": "imdb"
+                }   
+            }
+        }    
+    },
+    "data_loader": {
+        "module_dot_path": "allennlp",
+        "object_name": "multiprocess",
+        "args":{
+            "batch_sampler":{
+                "module_dot_path": "allennlp",
+                "object_name": "bucket",
+                "args": {
+                    "batch_size": 16,
+                    "sorting_keys": [
+                        "x"
+                    ]
+                }
+            },
+            "max_instances_in_memory": 1000,
+            "num_workers": 0,
+            "data_path": "./data/bgc/train-fold-0.jsonl"
+        }
+    },
+    "model": {
+        "module_dot_path":"allennlp",
+        "object_name": "multi-label-classification-with-infnet",
+        "args":{
+            "inference_module": {
+                "module_dot_path":"allennlp",
+                "object_name": "multi-label-basic",
+                "log_key": "inference_module",
+                "loss_fn": {
+                    "module_dot_path": "allennlp",
+                    "object_name": "combination-loss",
+                    "log_key": "loss",
+                    "args":{
+                        "reduction": "mean",
+                        "loss_weights": [
+                            3,
+                            1
+                        ],
+                        "constituent_losses": [
+                            {   
+                                "module_dot_path": "allennlp",
+                                "object_name": "multi-label-score-loss",
+                                "log_key": "neg_nce_score",
+                                "args":{
+                                    "reduction": "none",
+                                    "normalize_y": true
+                                }
+                            },
+                            {   
+                                "module_dot_path": "allennlp",
+                                "object_name": "multi-label-bce",
+                                "log_key": "bce",
+                                "args":{
+                                "reduction": "none"
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "initializer": {
+                "args":{
+                    "regexes": [
+                        [
+                            ".*feedforward._linear_layers.*weight",
+                            {
+                                "object_name": "kaiming_uniform",
+                                "args":{
+                                    "nonlinearity": "relu" 
+                                }
+                            }
+                        ],
+                        [
+                            ".*feedforward._linear_layers.*bias",
+                            {
+                                "object_name": "zero"
+                            }
+                        ]
+                    ]
+                }
+            },
+            "loss_fn": {
+                "module_dot_path": "allennlp",
+                "object_name": "multi-label-nce-ranking-with-discrete-sampling",
+                "log_key": "nce",
+                "args":{
+                    "num_samples": 900,
+                    "sign": "-"
+                }
+            },
+            "oracle_value_function": {
+                "module_dot_path": "allennlp",
+                "object_name": "per-instance-f1",
+                "args":{
+                    "differentiable": false
+                }
+            },
+            "sampler": {
+                "module_dot_path": "allennlp",
+                "object_name": "appending-container",
+                "args":{
+                    "constituent_samplers":[],
+                    "log_key": "sampler"
+                }
+            },
+            "score_nn": {
+                "module_dot_path": "allennlp",
+                "object_name": "multi-label-classification",
+                "args":{
+                    "global_score": {
+                        "module_dot_path":"allennlp",
+                        "object_name": "multi-label-feedforward",
+                        "args":{
+                            "feedforward": {
+                                "module_dot_path":"allennlp",
+                                "object_name":"feedforward",
+                                "args":{
+                                    "input_dim": 146,
+                                    "num_layers": 1,
+                                    "hidden_dims": 600,
+                                    "activations": "softplus"
+                                }
+                            }
+                        }
+                    },
+                    "task_nn": {
+                        "module_dot_path":"allennlp",
+                        "object_name": "multi-label-text-classification",
+                        "args":{
+                            "feature_network": {
+                                "module_dot_path":"allennlp",
+                                "object_name": "text-encoder",
+                                "args":{
+                                    "feedforward": {
+                                        "module_dot_path":"allennlp",
+                                        "object_name":"feedforward",
+                                        "args":{
+                                            "input_dim": 768,
+                                            "num_layers": 2,
+                                            "hidden_dims": [
+                                                1536,
+                                                768
+                                            ],
+                                            "activations": [
+                                                "softplus",
+                                                "softplus"
+                                            ],
+                                            "dropout": [
+                                                0.1,
+                                                0
+                                            ]
+                                        }
+                                    },    
+                                    "text_field_embedder": {
+                                        "token_embedders": {
+                                            "x": {
+                                                "module_dot_path": "allennlp",
+                                                "object_name": "pretrained_transformer",
+                                                "args":{
+                                                    "model_name": "bert-base-uncased"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "seq2vec_encoder": {
+                                        "module_dot_path":"allennlp",
+                                        "object_name": "bert_pooler",
+                                        "args":{
+                                            "pretrained_model": "bert-base-uncased"
+                                        }
+                                    },
+                                    "final_dropout": 0  
+                                }                  
+                            },
+                            "label_embeddings": {
+                                "module_dot_path":"allennlp",
+                                "object_name":"embedding",
+                                "args":{
+                                    "embedding_dim": 768,
+                                    "vocab_namespace": "labels"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "task_nn": {
+                "module_dot_path":"allennlp",
+                "object_name": "multi-label-text-classification",
+                "args":{
+                    "feature_network": {
+                        "module_dot_path":"allennlp",
+                        "object_name": "text-encoder",
+                        "args":{
+                            "feedforward": {
+                                "module_dot_path":"allennlp",
+                                "object_name":"feedforward",
+                                "args":{
+                                    "input_dim": 768,
+                                    "num_layers": 2,
+                                    "hidden_dims": 1024,
+                                    "activations": [
+                                        "softplus",
+                                        "softplus"
+                                    ],
+                                    "dropout": [
+                                        0.1,
+                                        0
+                                    ]             
+                                }   
+                            },
+                            "final_dropout": 0.1,
+                            "seq2vec_encoder": {
+                                "module_dot_path":"allennlp",
+                                "object_name": "bert_pooler",
+                                "args":{
+                                    "pretrained_model": "bert-base-uncased"
+                                }
+                            },
+                            "text_field_embedder": {
+                                "token_embedders": {
+                                    "x": {
+                                        "module_dot_path":"allennlp",
+                                        "object_name": "pretrained_transformer",
+                                        "args":{
+                                            "model_name": "bert-base-uncased"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "label_embeddings": {
+                        "module_dot_path":"allennlp",
+                        "object_name":"embedding",
+                        "args":{
+                            "embedding_dim": 1024,
+                            "vocab_namespace": "labels"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "train_data_path": "./data/bgc/train-fold-0.jsonl",
+    "validation_data_path": "./data/bgc/test.jsonl",
+    "trainer": {
+        "module_dot_path":"allennlp",
+        "object_name": "gradient_descent_minimax",
+        "args":{
+            "callbacks": [
+                {
+                    "module_dot_path":"allennlp",
+                    "object_name":"track_epoch_callback"
+                },
+                {
+                    "module_dot_path":"allennlp",
+                    "object_name":"slurm"
+                },
+                {   
+                    "module_dot_path":"allennlp",
+                    "object_name": "wandb_allennlp",
+                    "args":{
+                        "watch_model": false,
+                        "save_model_archive": false,
+                        "sub_callbacks": [
+                            {   
+                                "module_dot_path":"allennlp",
+                                "object_name": "log_best_validation_metric",
+                                "args":{
+                                    "priority": 100                        
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            "checkpointer": {
+                "module_dot_path":"allennlp",
+                "object_name":"default",
+                "args":{
+                    "keep_most_recent_by_count": 1
+                }
+            },
+            "cuda_device": 0,
+            "grad_norm": {
+                "score_nn": 1,
+                "task_nn": 1
+            },
+            "inner_mode": "score_nn",
+            "learning_rate_schedulers": {
+                "task_nn": {
+                    "module_dot_path":"allennlp",
+                    "object_name": "reduce_on_plateau",
+                    "args":{
+                        "factor": 0.5,
+                        "mode": "max",
+                        "patience": 1,
+                        "verbose": true
+                    }
+                }
+            },
+            "num_epochs": 300,
+            "num_steps": {
+                "score_nn": 1,
+                "task_nn": 1
+            },
+            "optimizer": {
+                "optimizers": {
+                    "score_nn": {
+                        "object_name": "huggingface_adamw",
+                        "lr": 0.0001,
+                        "weight_decay": 0.0001
+                    },
+                    "task_nn": {
+                        "object_name": "huggingface_adamw",
+                        "lr": 0.00001,
+                        "weight_decay": 0.0001
+                    }
+                }
+            },
+            "patience": 4,
+            "validation_metric": "+fixed_f1"
+        }
+    },
+    "vocabulary": {
+        "module_dot_path":"allennlp",
+        "object_name": "from_files",
+        "args":{
+            "directory": "./data/bgc/vocabulary"
+        }
+    },
+    "evaluate_on_test": true
+}
