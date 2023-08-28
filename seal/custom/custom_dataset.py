@@ -1,6 +1,5 @@
 from ast import Dict
 import codecs
-import fcntl
 import glob
 import json
 import pathlib
@@ -14,13 +13,13 @@ from transformers import AutoTokenizer, PreTrainedTokenizer
 from torch.nn import functional as F
 
 class MyDataset(Dataset):
-    
     def __init__(
         self,
-        data_path:str,
         tokenizer:PreTrainedTokenizer,
         train:bool = True,
-        label_txt_path:str = None
+        label_txt_path:str = None,
+        data_path:str = './',
+        dataset = None,
         **kwargs
     ):
         super().__init__()
@@ -28,23 +27,45 @@ class MyDataset(Dataset):
         self.tokenizer = tokenizer
         self.train = train
         self.label_txt_path = label_txt_path
+        self.dataset = dataset
 
         self.label_set = set()
 
+        self.read_data()
+        self.make_dataset()
+
     def read_data(self):
-        for file_ in glob.glob(self.data_path, flags=glob.EXTGLOB):
-            # logger.info(f"Reading {file_}")
-            with open(file_, encoding="utf-8") as f:
-                for line in f:
-                    example = json.loads(line)
+        if not self.dataset:
+            for file_ in glob.glob(self.data_path, flags=glob.EXTGLOB):
+                # logger.info(f"Reading {file_}")
+                with open(file_, encoding="utf-8") as f:
+                    for line in f:
+                        example = json.loads(line)
+                        instance = self.tokenize_data(**example)
+                        yield instance
+        else:
+            if self.train:
+                for i in range(self.dataset['train']['text']):
+                    example = {
+                        "title": self.dataset['train']['text'][i],
+                        "labels":self.dataset['train']['label'][i]
+                    }
                     instance = self.tokenize_data(**example)
                     yield instance
-    
+            else:
+                for i in range(self.dataset['test']['text']):
+                    example = {
+                        "title": self.dataset['test']['text'][i],
+                        "labels":self.dataset['test']['label'][i]
+                    }
+                    instance = self.tokenize_data(**example)
+                    yield instance
+
     def tokenize_data(
         self,
         title: str,
         body: str,
-        topics: Dict[str, List[str]],
+        topics: str,
         idx: str,
     ):
         tokens = self.tokenizer(title, return_tensors='pt', truncation=True, max_length=512)
