@@ -19,7 +19,6 @@ serialization_dir="./debug"
 
 # Assemble the command into sys.argv
 sys.argv = [
-    "srun"
     "allennlp",  # command name, not used by main
     "train",
     config_file,

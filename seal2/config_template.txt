@@ -1,0 +1,99 @@
+{
+   "data": {
+        "data_reader": {
+            "pacakage": "torch.utils.data.Dataset"
+            "args" : 
+            "package": "pytorch" / "huggingface" / "allennlp" / "custom"
+            pytorch 
+                "type" : "MNIST"
+                <args>                        
+            huggingface"
+                "type": "load_dataset" / "load_dataset_builder"
+                "dataset_name": "rotten_tomatoes" 
+            allennlp 
+                "type": "srl"
+                <args>
+            custom
+                "path_to_class": <path to class> / <path to default implementation dataset> 
+                <args>
+        }
+        "data_loader: {
+            "pacakage: "pytorch" / "allennlp" / "custom"
+            <args>  
+        }
+   }
+   "model":{
+        "task_score_share_feature_net": "T/F" 
+        "task_net":{
+            "type": sequence_tagging
+        
+            // Sequence tagging
+            "vocab": "?? <args>",
+            "text_field_embedder": "?? <args>",
+            "encoder": "?? <args>",
+            "feedforward": "?? <args>",
+            "dropout": "?? <args>",
+            "label_namespace": "?? <args>",
+            
+            // Multilabel
+            "vocab": "?? <args>",
+            "feature_network": "?? <args>",
+            "label_embedding": "?? <args>"
+        }
+        "score_net":{
+            "type": "??" Register / class name / path to class .py 
+            "feature_nn":{
+                "package": "pytorch" / "allennlp" / "custom" / "huggingface"
+                <args>
+            },
+            "global_score": {
+                "package": "pytorch" / "allennlp" / "custom" / "huggingface"
+                <args>
+            }
+            //"dropout": 0.5  only for weizmann_horse 
+        },
+        
+   },
+   "loss":{
+        "task_net":{
+            "type": "CombinationUnlabeledLoss",
+            "constituent_losses": [
+                {
+                    "log_key": "neg.nce_score",
+                    "normalize_y": true,
+                    "reduction": "none",
+                    "type": "sequence-tagging-score-loss"
+                },
+                {
+                    "log_key": "ce",
+                    "normalize_y": false,
+                    "reduction": "none",
+                    "type": "sequence-tagging-masked-cross-entropy"
+                }
+            ],
+            "loss_weights": None,
+            "score_nn": None,
+            "oracle_value_function": None,
+            "reduction": "sum",
+            "normalize_y": False,
+        }
+        "score_net":{
+            <example>
+            "type": "NCERankingLoss"
+            "keep_probs": "T/F"
+            "sign": "-/+", 
+            "use_scorenn": "T/F",
+            "use_distance": "T/F,
+            "loss_weights": "Dict",
+            "num_samples": "int"
+        }
+   }
+   "trainer":{
+        "optimizer":{
+            "lr"
+        },
+        "epoch": "int"
+        ...
+   }
+}
+

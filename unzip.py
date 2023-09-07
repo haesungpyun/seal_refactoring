@@ -10,7 +10,12 @@
 # import json
 # import sys, os
 # import pandas as pd
+from datasets import load_dataset
+import os
+ds = load_dataset("jsonl", data_files='./data/bgc/train-fold-0.jsonl')
 
+
+raise ValueError
 from transformers import BertTokenizer
 
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')

@@ -5,7 +5,6 @@ import importlib
 import torch
 import importlib
 from seal.set_experiment import Experiment
-from allennlp.common.util import import_module_and_submodules
 import pathlib
 
 def main(path_to_config:str = None):
@@ -18,9 +17,10 @@ def main(path_to_config:str = None):
     # for _, name, ispkg in pkgutil.walk_packages(path):
     #     importlib.import_module('seal'+'.'+name)
     
-    if 'allennlp' in str(config):
-        import_module_and_submodules('allennlp')
-        import_module_and_submodules('allennlp_models')
+    # if 'allennlp' in str(config):
+        # import_module_and_submodules('allennlp')
+        # import_module_and_submodules('allennlp_models')
+        ...
 
     package = importlib.import_module('seal')
     path = getattr(package, "__path__", [])
@@ -94,4 +94,4 @@ def main(path_to_config:str = None):
     print(f'--------------------- Epoch {epoch} ended ---------------------')
             
 if __name__ == '__main__':
-    main("./config.json")
+    main("./config2.json")
