@@ -29,20 +29,34 @@ class Experiment(object):
         return data_loader, seal, optimizers
     
     def make_optimizers(self, model, optimizers_config):
-        
-        optimizers = {
-            name:
-            self.wrapper.construct_class(
-                optimizers_config[name], 
-                name, 
-                params=getattr(
-                    getattr(
-                        model, 
-                        'inference_module'
-                    ),
-                    name
-                ).parameters()
-            )
-            for name in optimizers_config.keys()
-        }
+        optimizers = {}
+        for name in optimizers_config.keys():
+            if name == 'task_nn':
+                optimizers[name] = self.wrapper.construct_class(
+                    optimizers_config[name], 
+                    name, 
+                    params=getattr(
+                        getattr(
+                        getattr(
+                            model, 
+                            'inference_module'
+                        ),
+                        'score_nn'
+                        ),
+                        name
+                    ).parameters()
+                )
+            else:
+                optimizers[name] =self.wrapper.construct_class(
+                    optimizers_config[name], 
+                    name, 
+                    params=getattr(
+                        getattr(
+                            model, 
+                            'inference_module'
+                        ),
+                        name
+                    ).parameters()
+                )
+            
         return optimizers
