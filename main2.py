@@ -49,16 +49,16 @@ def main(path_to_config:str = None):
     # experiment.make_data_loader()
     train_dataloader, model, optimizers = experiment.set_experiment()
 
-    trainer_config = config.pop('trainer')
+    trainer_config = config['trainer']['args']
     inner_mode = trainer_config['inner_mode']
     num_inner_step = trainer_config['num_steps'].pop(inner_mode, 0)
 
     outer_mode, num_outer_step = trainer_config['num_steps'].popitem()
 
-    for epoch in range(trainer_config['epoch']):
+    for epoch in range(trainer_config['num_epochs']):
         running_loss = 0.0
         running_accuracy = 0.0
-        total_batch = len(train_dataloader)
+        total_batch = len(list(train_dataloader))
         
         for i, (Xs, y) in enumerate(train_dataloader):
             for _ in range(num_outer_step):
@@ -87,11 +87,10 @@ def main(path_to_config:str = None):
         if epoch % 1 == 0:
             print(f'Epoch: {epoch:>4d}\tLoss: {running_loss / total_batch:.5f}')
             print(f'Epoch: {epoch:>4d}\tAccuracy: {running_accuracy / total_batch:.5f}')
-        if i == 20:
-            break
             
     print("running loss:", running_loss / total_batch)
     print(f'--------------------- Epoch {epoch} ended ---------------------')
             
 if __name__ == '__main__':
     main("./config2.json")
+    
