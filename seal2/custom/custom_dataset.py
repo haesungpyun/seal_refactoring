@@ -1,134 +1,121 @@
 from collections import defaultdict
 import os
 import codecs
+import numpy as np
 from wcmatch import glob
 import json
 import pathlib
-import pickle
 import re
 import torch
-from torch.utils.data import Dataset
-from typing import Any, List
+from torch.utils.data import IterableDataset
 from transformers import PreTrainedTokenizer
+from typing import Any, List
 
+_NEW_LINE_REGEX = re.compile(r"\n|\r\n") 
 
-class MyDataset(Dataset):
+class MyDataset(IterableDataset):
     def __init__(
         self,
-        tokenizer:PreTrainedTokenizer,
+        tokenizer: PreTrainedTokenizer,
+        return_tensors: str = "pt",
+        truncate: bool = True,
+        max_length: int = 512,
+        padding: bool = False,
+        label_dict_path: str = None,
         tr_vl_ts:str = 'train',
         label_txt_path:str = None,
         data_path:str = './',
-        dataset = None,
+        dataset: torch.utils.data.Dataset = None,
+        random_shuffle: bool = False,
         **kwargs
     ):
         super().__init__()
-        self.tokenizer = tokenizer
+        self._tokenizer = tokenizer
+        self._tokenizer_kwargs = {
+            "return_tensors": return_tensors,
+            "truncation": truncate,
+            "max_length": max_length,
+            "padding": padding
+        }
+        self.label_dict_path = label_dict_path
+
         self.tr_vl_ts = tr_vl_ts
-        self.label_txt_path = label_txt_path
-        
+
         self.data_path = pathlib.Path(data_path)        
         self.dataset = dataset
+        self.data_len = 0
 
-        self.data_generator = self.make_dataset()
+        # Load label dictionary if it exists
+        self.label_txt_path = label_txt_path
+        self._label_dictionary = defaultdict(int)
+        
+        self.random_shuffle = random_shuffle
 
-    def _read_data(self):
+        self._load_label_dict()
+
+    def __iter__(self):
         if not self.dataset:
-            # for file_ in os.listdir(self.data_path):
-                # logger.info(f"Reading {file_}")
-            # !!! should deal with multiple files in the future !!!
-            with open(self.data_path,'r', encoding="utf-8") as f:
-                for line in f:
-                    example = json.loads(line)
-                    instance = self._tokenize_data(**example)
-                    yield instance
-        else:
-            for i in range(self.dataset[self.tr_vl_ts]['text']):
-                example = {
-                    "title": self.dataset[self.tr_vl_ts]['text'][i],
-                    "labels":self.dataset[self.tr_vl_ts]['label'][i]
-                }
-                instance = self._tokenize_data(**example)
-                yield instance
+            for file_ in glob.glob(self.data_path.absolute().as_posix(), flags=glob.EXTGLOB):
+                with codecs.open(file_, "r", "utf-8") as f:
+                    lines = _NEW_LINE_REGEX.split(f.read())
+                    for idx in np.random.permutation(len(lines)) if self.random_shuffle else range(len(lines)):
+                        example = json.loads(lines[idx])
+                        instance = self._read_data(**example)
+                        yield instance
+            self._save_label_dict()
             
-    def _tokenize_data(
+        else:
+            for idx in np.random.permutation(len(lines)) if self.random_shuffle else range(self.dataset[self.tr_vl_ts]['text']):
+                example = {
+                    "title": self.dataset[self.tr_vl_ts]['text'][idx],
+                    "labels":self.dataset[self.tr_vl_ts]['label'][idx]
+                }
+                instance = self._read_data(**example)
+                yield instance
+            self._save_label_dict()
+            
+    def _read_data(
         self,
         title: str,
         body: str,
         topics: str,
         idx: str,
         **kwargs: Any,
-    ):
-        tokens = self.tokenizer(title, return_tensors='pt', truncation=True, max_length=512)
-        labels_ = []
+    ): 
+        labels = []
         for value in topics.values():
-            labels_ += (
+            labels += (
                 [value]  # type:ignore
                 if not isinstance(value, list)
                 else value
             )
+        
+        label_idx_list = [] 
+        for label in labels:
+            if self._label_dictionary.get(label) is None:
+                self._label_dictionary[label] = len(self._label_dictionary)
+            label_idx_list.append(self._label_dictionary[label])
 
-        return {'x': tokens, 'labels':labels_}
+        return {'text': body, 'labels':label_idx_list}
 
     def _load_label_dict(self):
-        self.label_dictionary = defaultdict(int)
-        _NEW_LINE_REGEX = re.compile(r"\n|\r\n") 
-        filename = self.label_txt_path
-        with codecs.open(filename, "r", "utf-8") as f:
-            lines = _NEW_LINE_REGEX.split(f.read())
-            # Be flexible about having final newline or not
-            if lines and lines[-1] == "":
-                lines = lines[:-1]
-            for index, line in enumerate(lines):
-                token = line.replace("@@NEWLINE@@", "\n")
-                self.label_dictionary[token] = index
+        if os.path.exists(os.path.join(self.data_path.parent,'./label_dict.txt')):
+            with open(os.path.join(self.data_path.parent,'./label_dict.txt'), 'r') as f:
+                self._label_dictionary = json.load(f)
+            return
+                    
+        if self.label_txt_path:    
+            with codecs.open(self.label_txt_path , "r", "utf-8") as f:
+                lines = _NEW_LINE_REGEX.split(f.read())
+                # Be flexible about having final newline or not
+                if lines and lines[-1] == "":
+                    lines = lines[:-1]
+                for index, line in enumerate(lines):
+                    token = line.replace("@@NEWLINE@@", "\n")
+                    self._label_dictionary[token] = index
+            return
+        raise ValueError('label_txt_path is None')
 
     def _save_label_dict(self):
-        with open(self.data_path.parent + './label_dict.txt', 'w') as f:
-                json.dump(self.label_dictionary)
-        
-    def make_dataset(self):        
-        instance_gen_ = self._read_data()
-        
-        self._load_label_dict()
-
-        for tokens, labels_ in instance_gen_:
-            label_idx_list = []
-            for label in labels_:
-                if self.tr_vl_ts != 'test' and self.label_dictionary.get(label) is None:
-                    self.label_dictionary[label] = len(self.label_dictionary)
-                label_idx_list.append(self.label_dictionary[label])
-            yield {'x':tokens, 'labels':label_idx_list}
-
-        self._save_label_dict()
-    
-    def __len__(self,):
-        return len(self.data_generator)
-    
-    def __getitem__(self, idx):
-        isinstance = next(self.data_generator)
-        return isinstance['x'], isinstance['labels']
-
-class MNISTDataset(Dataset):
-    def __init__(
-        self,
-        path_to_data:str,
-        test:bool = False,
-        dataset:Dataset=None,
-        **kwargs
-    ):
-        super().__init__()
-        with open(path_to_data, 'rb') as f:
-            self.dataset = pickle.load(f)
-        
-        self.num_pairs = self.dataset[0]
-        self.labels = torch.nn.functional.one_hot(
-            self.dataset[1],
-            19
-        )
-        
-    def __len__(self,):
-        return len(self.num_pairs)
-    
-    def __getitem__(self, idx):
-        return self.num_pairs[idx].float(), self.labels[idx].float()
+        with open(os.path.join(self.data_path.parent,'./label_dict.txt'), 'w') as f:
+            json.dump(self._label_dictionary, f)

@@ -72,8 +72,8 @@ MODE_LITERALS_TYPE = Literal[
 ]
 
 
-@Optimizer.register("minimax")
-class MiniMaxOptimizer(Optimizer, MutableMapping):
+# @Optimizer.register("minimax")
+class MiniMaxOptimizer(torch.optim.Optimizer, MutableMapping):
     """
     Holds multiple optimizers as dictionary with string keys.
     Each it behaves as `torch.optim.Optimizer` but all the methods take in
@@ -93,7 +93,7 @@ class MiniMaxOptimizer(Optimizer, MutableMapping):
         model_parameters: List[Tuple[str, torch.nn.Parameter]],
         optimizers: Dict[
             MODE_LITERALS_TYPE,
-            Lazy[Optimizer],
+            Optimizer,
         ],
         parameter_groups: ParameterGroupsType = None,
     ):
@@ -102,7 +102,7 @@ class MiniMaxOptimizer(Optimizer, MutableMapping):
         # then that parameter will not be assigned to any optimizer
 
         if parameter_groups is not None:
-            raise ConfigurationError("parameter_groups are not supported.")
+            raise KeyError("parameter_groups are not supported.")
         unassigned_params = []
         named_params_: Dict[
             MODE_LITERALS_TYPE,
@@ -229,12 +229,12 @@ class ChecksForGradientDescentMiniMaxTrainer(TrainerCallback):
         """
 
         if not isinstance(trainer, GradientDescentMinimaxTrainer):
-            raise ConfigurationError(
+            raise KeyError(
                 "Use this callback with GradientDescentMinimaxTrainer only"
             )
 
         if trainer._use_amp:
-            raise ConfigurationError(
+            raise KeyError(
                 "AMP is not supported for GradientDescentMinimaxTrainer"
             )
         # Make sure that there are not parameters left for the default optimizer
@@ -242,12 +242,12 @@ class ChecksForGradientDescentMiniMaxTrainer(TrainerCallback):
         # if it does not get any parameter. This is what we check.
 
         if not isinstance(trainer.optimizer, MultiOptimizer):
-            raise ConfigurationError(
+            raise KeyError(
                 "Optimizer for GradientDescentMinimaxTrainer should be of type MultiOptimizer"
             )
 
         if "default" in trainer.optimizer.optimizers:
-            raise ConfigurationError(
+            raise KeyError(
                 "In 'GradientDescentMinimaxTrainer' all the parameters should be assigned to either min or max optimizer"
                 "But the following param groups are not assigned to any and are left for default optimizer"
                 f"{trainer.optimizer.optimizers['default'].param_groups}"
@@ -257,18 +257,18 @@ class ChecksForGradientDescentMiniMaxTrainer(TrainerCallback):
             # DP: In order to make it work with DDP, we need to wrap all three methods _forward(), update() and compute_score()
             # in the main `forward()` call because DDP only syncs __call__(). Even after that, there might some lingering
             # issues. Hence, for now, we won't bother supporting it.
-            raise ConfigurationError(
+            raise KeyError(
                 "MiniMaxTrainer and ScoreBasedLearningModel does not support DDP."
             )
 
         if trainer._num_gradient_accumulation_steps != 1:
-            raise ConfigurationError("Gradient accumulation is not supported.")
+            raise KeyError("Gradient accumulation is not supported.")
         super().on_start(trainer, is_primary=is_primary, **kwargs)
 
 
-@Trainer.register(
-    "gradient_descent_minimax", constructor="from_partial_objects"
-)
+# @Trainer.register(
+#     "gradient_descent_minimax", constructor="from_partial_objects"
+# )
 class GradientDescentMinimaxTrainer(Trainer):
     """
     A trainer for doing two step minimax learning with gradient descent.
@@ -347,7 +347,7 @@ class GradientDescentMinimaxTrainer(Trainer):
                     "meaning that early stopping is disabled"
                 )
         elif (not isinstance(patience, int)) or patience <= 0:
-            raise ConfigurationError(
+            raise KeyError(
                 '{} is an invalid value for "patience": it must be a positive integer '
                 "or None (if you want to disable early stopping)".format(
                     patience
@@ -825,7 +825,7 @@ class GradientDescentMinimaxTrainer(Trainer):
             if self._validation_data_loader is not None:
                 validation_data_loader = self._validation_data_loader
             else:
-                raise ConfigurationError(
+                raise KeyError(
                     "Validation results cannot be calculated without a validation_data_loader"
                 )
 
@@ -913,7 +913,7 @@ class GradientDescentMinimaxTrainer(Trainer):
         try:
             self._restore_checkpoint()
         except RuntimeError as e:
-            configuration_error = ConfigurationError(
+            configuration_error = KeyError(
                 "Could not recover training from the checkpoint. Did you mean to output to "
                 "a different serialization directory or delete the existing serialization "
                 "directory?"

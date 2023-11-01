@@ -24,6 +24,11 @@ class Experiment(object):
 
         seal = self.model_wrapper.make_shared_nn_seal(vocab)
 
+        batch_generator = iter(data_loader)
+        for i in batch_generator:
+            print(i)
+            break
+
         optimizers = self.make_optimizers(seal, self.config_dict['trainer'].pop('optimizers'))
 
         return data_loader, seal, optimizers

@@ -1,7 +1,7 @@
 {   
-    "dataset_reader": {
-        "module_dot_path": "seal2.custom.custom_dataset",
-        "object_name": "MyDataset",
+    "data_processor":{
+        "module_dot_path": "seal2.utils.data",
+        "object_name": "DataProcessor",
         "args":{
             "tokenizer":{
                 "module_dot_path": "transformers",
@@ -11,27 +11,33 @@
                     "pretrained_model_name_or_path": "bert-base-uncased"
                 }
             },
-            "data_path":"./data/bgc/train-fold-0.jsonl"
+            "return_tensors":"pt",
+            "truncate": true,
+            "max_length": 512,
+            "padding": true,
+            "label_dict_path": "./data/bgc/label_dict.json"
+        }
+    },
+    "dataset_reader": {
+        "module_dot_path": "seal2.custom.custom_dataset",
+        "object_name": "MyDataset",
+        "args":{
+            "tr_vl_ts": "train",
+            "label_txt_path": null,
+            "dataset": null,
+            "data_path":"./data/bgc/train-fold-0.jsonl",
+            "random_shuffle": false
         }    
     },
     "data_loader": {
-        "module_dot_path": "allennlp",
-        "object_name": "multiprocess",
+        "module_dot_path": "torch.utils.data.DataLoader",
+        "object_name": "DataLoader",
         "args":{
-            "batch_sampler":{
-                "module_dot_path": "allennlp",
-                "object_name": "bucket",
-                "args": {
-                    "batch_size": 16,
-                    "sorting_keys": [
-                        "x"
-                    ]
-                }
+                "batch_size": 2
             },
             "max_instances_in_memory": 1000,
             "num_workers": 0,
             "data_path": "./data/bgc/train-fold-0.jsonl"
-        }
     },
     "model": {
         "module_dot_path":"seal2.models.multilabel_classification",

@@ -48,7 +48,6 @@
     },
     "train_data_path": "./data/bgc/train-fold-0.jsonl",
     "validation_data_path": "./bgc/train-fold-0.jsonl",
-    "test_data_path": "./bgc/train-fold-0.jsonl",
     "model": {
         "type": "multi-label-classification-with-infnet",
         "inference_module": {
@@ -219,19 +218,7 @@
         "type": "gradient_descent_minimax",
         "callbacks": [
             "track_epoch_callback",
-            "slurm",
-            {
-                "save_model_archive": false,
-                "sub_callbacks": [
-                    {
-                        "priority": 100,
-                        "type": "log_best_validation_metric"
-                    }
-                ],
-                "type": "wandb_allennlp",
-                "watch_model": false
-            },
-            "thresholding"
+            "slurm"
         ],
         "checkpointer": {
             "keep_most_recent_by_count": 1,

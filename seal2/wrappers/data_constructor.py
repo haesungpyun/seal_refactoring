@@ -1,7 +1,3 @@
-import codecs
-import re
-
-import torch
 from .constructor import Constructor
 
 
@@ -11,6 +7,9 @@ class DataConstructor(Constructor):
         self.config_dict = config_dict
         
     def make_dataloader(self):
+        dataprocessor = self.construct_class(self.config_dict['data_processor'],
+                                             'data_processor')
+        
         dataset = self.construct_class(self.config_dict['dataset_reader'], 
                                        'dataset_reader')
         
@@ -21,15 +20,15 @@ class DataConstructor(Constructor):
         else:
             data_loader = self.construct_class(self.config_dict['data_loader'], 
                                                'data_loader', 
-                                               dataset=dataset)
-        
-        instance_generator = (
-                instance
-                for instance in data_loader.iter_instances()
-            )
-        vocab = self.construct_class(self.config_dict['vocabulary'],"vocabulary")
+                                               dataset=dataset,
+                                               collate_fn=dataprocessor.collate_fn)
+        for idx, b in enumerate(data_loader):
+            print(idx, b)
+            list(b)
+            break
 
         if "allennlp" in str(self.config_dict['data_loader']):
+            vocab = self.construct_class(self.config_dict['vocabulary'],"vocabulary")
             data_loader.index_with(vocab)
                      
         # 패키지 별로 data loading format 동일하게 후처리 wrapping 해주기

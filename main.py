@@ -94,4 +94,4 @@ def main(path_to_config:str = None):
     print(f'--------------------- Epoch {epoch} ended ---------------------')
             
 if __name__ == '__main__':
-    main("./config2.json")
+    main("./config.json")

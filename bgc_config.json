@@ -178,18 +178,7 @@
         "type": "gradient_descent_minimax",
         "callbacks": [
             "track_epoch_callback",
-            "slurm",
-            {
-                "type": "wandb_allennlp",
-                "watch_model": false,
-                "save_model_archive": false,
-                "sub_callbacks": [
-                    {
-                        "type": "log_best_validation_metric",
-                        "priority": 100                        
-                    }
-                ]
-            }
+            "slurm"
         ],
         "checkpointer": {
             "keep_most_recent_by_count": 1
